@@ -1,3 +1,7 @@
+Mocha allows us to test asynchronous operations like calls to API endpoints using a plugin called `chai-http` 
+- chai is an assertion library
+- headless browser (zombieJS) allow us to simulate human interaction with a page
+  - They are browsers whithout a GUI
 # assert - chai
 
 if the assert is not true the 'text' is showed as an error an the compiler stops
@@ -86,18 +90,72 @@ assert.notInstanceOf( instance , object, 'text' )
 This is a plugin
 
 ```js
-suite('GET /hello?name=[name] => "hello [name]"', function(){
-    test('?name=John', function(done){
+suite('GET /hello?name=[name] => "hello [name]"', function(){ //The first argument is the name of the test or title
+    test('?name=John', function(done){ //done function as the parameter
       chai.request(server) //test request to the 'server'
           .keepOpen() //It is to allowed chai-http start and stop our server automatically, but in this case we need to keep open the server to pass the test in FCC
-          .get('/hello?name=John')
+          .get('/hello?name=John') //but we can use put and send methods for the PUT HTTP method
           .end(function(err,res){
-            assert.equal(res.status,200,"Response status should be 200")
-            assert.equal(res.text, 'hello John', 'Response should be "Hello John"')
+            assert.equal(res.status,200,"Response status should be 200") //response is OK
+            assert.equal(res.text, 'hello John', 'Response should be "Hello John"') // then checks if the answer is correct
             done(); //which is the middleware that handles the response is like a rounte handler itself, we are not using an argument because in this case it is designed to be like that
             })
         })
     })
 ```
 
+we need to use the next imports
+```js
+const chai = require('chai');
+const assert = chai.assert;
 
+const server = require('../server'); //this is the directory where our project is running
+
+const chaiHttp = require('chai-http');
+chai.use(chaiHttp);
+```
+
+### Using put and send methods
+
+It is like executing a POST request, remember that it can act like get, but it is more focused to an user interface
+
+```js
+chai.resquest(server)
+    .keepOpen()
+    .put('/travellers') //route in which we are executing our http method
+    .send({"name":"mefercs"})
+    .end( function(err,res){ // remember we are using a middleware here, so we need to use the err, res, in this case is not the req,res
+       assert.equal( res.status, 200, "Something went wrong with the server" ) 
+       assert.equal( res.type, 'application/json', "The type should be application/json" )
+       assert.equal( res.body.name, 'something', 'The name should be something' )
+       assert.equal( res.body.surname, "something", "The surname should be something")
+    } );
+done(); //Always finish with done() function to handle the answer response
+```
+
+- headless browser are web browsers without a GUI 
+```js
+//Using zombie js
+const Browser = require('zombie')
+Browser.site = "url"
+
+//somewhere in the code before any test
+const browser = new Browser()
+browser.visit('/', done )
+
+
+test('Submit the surname "Polo" in the HTML form', function (done) {
+  browser.fill('surname', 'Polo').then(() => {
+    browser.pressButton('submit', () => {
+      browser.assert.success();
+      browser.assert.text('span#name', 'Marco');
+      browser.assert.text('span#surname', 'Polo');
+      browser.assert.elements('span#dates', 1);
+    });
+  });
+
+  done(); 
+});
+```
+
+- Moch allows us to run some code before anything.
